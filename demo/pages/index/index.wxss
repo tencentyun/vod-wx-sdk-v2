@@ -1,0 +1,30 @@
+/**index.wxss**/
+
+.tips_title {
+    display: block;
+    font-size: 14px;
+    padding: 10px;
+    margin: 0 10px;
+}
+
+.tips_content {
+    font-size: 14px;
+    padding: 10px;
+    margin: 0 10px;
+}
+
+.file_name {
+    margin-top: 40px;
+    margin-left: 20px;
+    border: 1px solid gray;
+    border-radius: 4px;
+    margin-right: 20px;
+    padding: 4px;
+}
+
+.file_upload {
+    margin-top: 20px;
+    margin-left: 20px;
+    width: 140px;
+    border: 1px solid gray;
+}

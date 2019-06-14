@@ -1,0 +1,8 @@
+<view class="container">
+  <view class="upload">
+    <text class="tips_title">温馨提示：</text>
+    <text class="tips_content">因为小程序获取不到真实的文件名，所以需要在上传视频之前，输入视频名称！如果不输入，SDK会设置默认的视频名称为“来自小程序”。</text>
+    <input class="file_name" placeholder="在上传视频之前，输入视频名称" auto-focus type="text" bindinput="inputChange"/>
+    <button class="file_upload" bindtap="chooseFile">上传视频</button>
+  </view>
+</view>
