@@ -1,6 +1,6 @@
 # vod-wx-sdk-v2
 
-A sdk for wechat mini program
+Tencent cloud vod sdk for wechat mini program
 
 ## Usage
 
