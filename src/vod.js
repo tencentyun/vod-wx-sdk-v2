@@ -1,49 +1,18 @@
 const COS = require("./cos-wx-sdk-v5.1");
+const vodUtil = require("./vod_util");
 
-var Util = {
-  getType: function(a) {
-    return null === a
-      ? "null"
-      : void 0 === a
-      ? "undefined"
-      : Object.prototype.toString
-          .call(a)
-          .slice(8, -1)
-          .toLowerCase();
-  },
-  isFunction: function(para) {
-    if (para && this.getType(para) != "function") {
-      return false;
-    } else {
-      return true;
-    }
-  },
-  getFileMessage: function(file, fileName) {
-    var fileMsg = {};
-    fileMsg.tempFilePath = file.tempFilePath;
-    fileMsg.type = file.tempFilePath.substring(
-      file.tempFilePath.lastIndexOf(".") + 1
-    );
-    if (typeof fileName == "string") {
-      fileMsg.name = fileName;
-    } else {
-      fileMsg.name = "来自小程序";
-    }
-    fileMsg.size = file.size;
-    return fileMsg;
-  }
-};
+class Uploader {
+  constructor() {}
 
-var _ugcUploader = {
-  start: function(opts) {
+  start(opts) {
     if (opts.mediaFile) {
       opts.videoFile = opts.mediaFile;
     }
     if (opts.mediaName) {
       opts.fileName = opts.mediaName;
     }
-    var This = _ugcUploader;
-    if (Util.getType(opts) != "object") {
+    var This = this;
+    if (vodUtil.getType(opts) != "object") {
       wx.showToast({
         title: "参数必须为对象类型",
         icon: "error",
@@ -59,7 +28,7 @@ var _ugcUploader = {
       });
       return;
     } else {
-      This.fileMessage = Util.getFileMessage(opts.videoFile, opts.fileName);
+      This.fileMessage = vodUtil.getFileMessage(opts.videoFile, opts.fileName);
     }
     if (!opts.getSignature) {
       wx.showToast({
@@ -70,11 +39,11 @@ var _ugcUploader = {
       return;
     }
     if (
-      !Util.isFunction(opts.getSignature) ||
-      !Util.isFunction(opts.success) ||
-      !Util.isFunction(opts.error) ||
-      !Util.isFunction(opts.progress) ||
-      !Util.isFunction(opts.finish)
+      !vodUtil.isFunction(opts.getSignature) ||
+      !vodUtil.isFunction(opts.success) ||
+      !vodUtil.isFunction(opts.error) ||
+      !vodUtil.isFunction(opts.progress) ||
+      !vodUtil.isFunction(opts.finish)
     ) {
       wx.showToast({
         title:
@@ -87,7 +56,7 @@ var _ugcUploader = {
 
     This.opts = opts;
 
-    if (Util.getType(This.retryStartNum) == "undefined") {
+    if (vodUtil.getType(This.retryStartNum) == "undefined") {
       This.retryStartNum = 3;
     }
 
@@ -126,8 +95,9 @@ var _ugcUploader = {
         }
       });
     });
-  },
-  uploadFile: function(result) {
+  }
+
+  uploadFile(result) {
     var res = result.data.data;
     var cosParam = {
       bucket: res.storageBucket + "-" + res.storageAppId,
@@ -162,12 +132,13 @@ var _ugcUploader = {
           }
         }
       },
-      this.requestCallback
+      this.requestCallback.bind(this)
     );
-  },
+  }
+
   // cos回调统一处理函数
-  requestCallback: function(err, data) {
-    var This = _ugcUploader;
+  requestCallback(err, data) {
+    var This = this;
     if (err) {
       //失败
       if (typeof This.opts.error == "function") {
@@ -180,15 +151,16 @@ var _ugcUploader = {
       }
       This.finishUpload();
     }
-  },
-  finishUpload: function() {
+  }
+
+  finishUpload() {
     var sendParam = {
       signature: this.signature,
       vodSessionKey: this.vodSessionKey
     };
 
     var This = this;
-    if (Util.getType(This.retryFinishNum) == "undefined") {
+    if (vodUtil.getType(This.retryFinishNum) == "undefined") {
       This.retryFinishNum = 3;
     }
 
@@ -225,8 +197,11 @@ var _ugcUploader = {
       }
     });
   }
-};
+}
 
 module.exports = {
-  start: _ugcUploader.start
+  start: function(params) {
+    const uploader = new Uploader();
+    uploader.start(params);
+  }
 };
