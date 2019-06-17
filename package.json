@@ -1,7 +1,7 @@
 {
   "name": "vod-wx-sdk-v2",
   "version": "0.0.1",
-  "description": "A sdk for wechat mini program",
+  "description": "Tencent cloud vod sdk for wechat mini program",
   "main": "index.js",
   "scripts": {
     "build": "webpack --config webpack.config.js",

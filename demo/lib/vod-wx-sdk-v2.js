@@ -95,13 +95,14 @@ class Uploader {
   constructor() {}
 
   start(opts) {
+    const self = this;
+
     if (opts.mediaFile) {
       opts.videoFile = opts.mediaFile;
     }
     if (opts.mediaName) {
       opts.fileName = opts.mediaName;
     }
-    var This = this;
     if (vodUtil.getType(opts) != "object") {
       wx.showToast({
         title: "参数必须为对象类型",
@@ -118,7 +119,7 @@ class Uploader {
       });
       return;
     } else {
-      This.fileMessage = vodUtil.getFileMessage(opts.videoFile, opts.fileName);
+      self.fileMessage = vodUtil.getFileMessage(opts.videoFile, opts.fileName);
     }
     if (!opts.getSignature) {
       wx.showToast({
@@ -144,19 +145,19 @@ class Uploader {
       return;
     }
 
-    This.opts = opts;
+    self.opts = opts;
 
-    if (vodUtil.getType(This.retryStartNum) == "undefined") {
-      This.retryStartNum = 3;
+    if (vodUtil.getType(self.retryStartNum) == "undefined") {
+      self.retryStartNum = 3;
     }
 
     opts.getSignature(function(signature) {
-      This.signature = signature;
-      var sendParam = {
+      self.signature = signature;
+      const sendParam = {
         signature: signature,
-        videoName: This.fileMessage.name,
-        videoType: This.fileMessage.type,
-        videoSize: This.fileMessage.size
+        videoName: self.fileMessage.name,
+        videoType: self.fileMessage.type,
+        videoSize: self.fileMessage.size
       };
       wx.request({
         method: "POST",
@@ -165,22 +166,22 @@ class Uploader {
         dataType: "json",
         success: function(result) {
           if (result.data.code == 0) {
-            This.vodSessionKey = result.data.data.vodSessionKey;
-            This.uploadFile(result);
+            self.vodSessionKey = result.data.data.vodSessionKey;
+            self.uploadFile(result);
           } else {
-            if (This.retryStartNum > 0) {
-              This.retryStartNum--;
-              This.start(opts);
+            if (self.retryStartNum > 0) {
+              self.retryStartNum--;
+              self.start(opts);
             } else {
-              if (typeof This.opts.error == "function") {
-                This.opts.error(result);
+              if (typeof self.opts.error == "function") {
+                self.opts.error(result);
               }
             }
           }
         },
         fail: function(result) {
-          if (typeof This.opts.error == "function") {
-            This.opts.error(result);
+          if (typeof self.opts.error == "function") {
+            self.opts.error(result);
           }
         }
       });
@@ -188,8 +189,10 @@ class Uploader {
   }
 
   uploadFile(result) {
-    var res = result.data.data;
-    var cosParam = {
+    const self = this;
+
+    const res = result.data.data;
+    const cosParam = {
       bucket: res.storageBucket + "-" + res.storageAppId,
       region: res.storageRegionV5,
       key: res.video.storagePath,
@@ -199,7 +202,7 @@ class Uploader {
       token: res.tempCertificate.token,
       expiredTime: res.tempCertificate.expiredTime
     };
-    var cos = new COS({
+    const cos = new COS({
       getAuthorization: function(options, callback) {
         callback({
           TmpSecretId: cosParam.secretId,
@@ -209,7 +212,6 @@ class Uploader {
         });
       }
     });
-    var This = this;
     cos.postObject(
       {
         Bucket: cosParam.bucket,
@@ -217,8 +219,8 @@ class Uploader {
         Key: cosParam.key,
         FilePath: cosParam.filePath,
         onProgress: function(info) {
-          if (typeof This.opts.progress == "function") {
-            This.opts.progress(info);
+          if (typeof self.opts.progress == "function") {
+            self.opts.progress(info);
           }
         }
       },
@@ -228,30 +230,31 @@ class Uploader {
 
   // cos回调统一处理函数
   requestCallback(err, data) {
-    var This = this;
+    const self = this;
     if (err) {
       //失败
-      if (typeof This.opts.error == "function") {
-        This.opts.error(err);
+      if (typeof self.opts.error == "function") {
+        self.opts.error(err);
       }
     } else {
       //成功
-      if (typeof This.opts.success == "function") {
-        This.opts.success(data);
+      if (typeof self.opts.success == "function") {
+        self.opts.success(data);
       }
-      This.finishUpload();
+      self.finishUpload();
     }
   }
 
   finishUpload() {
-    var sendParam = {
+    const self = this;
+
+    const sendParam = {
       signature: this.signature,
       vodSessionKey: this.vodSessionKey
     };
 
-    var This = this;
-    if (vodUtil.getType(This.retryFinishNum) == "undefined") {
-      This.retryFinishNum = 3;
+    if (vodUtil.getType(self.retryFinishNum) == "undefined") {
+      self.retryFinishNum = 3;
     }
 
     wx.request({
@@ -261,28 +264,28 @@ class Uploader {
       dataType: "json",
       success: function(result) {
         if (result.data.code == 0) {
-          var res = result.data.data;
-          if (typeof This.opts.finish == "function") {
-            This.opts.finish({
+          const res = result.data.data;
+          if (typeof self.opts.finish == "function") {
+            self.opts.finish({
               fileId: res.fileId,
-              videoName: This.fileMessage.name,
+              videoName: self.fileMessage.name,
               videoUrl: res.video && res.video.url
             });
           }
         } else {
-          if (This.retryFinishNum > 0) {
-            This.retryFinishNum--;
-            This.finishUpload();
+          if (self.retryFinishNum > 0) {
+            self.retryFinishNum--;
+            self.finishUpload();
           } else {
-            if (typeof This.opts.error == "function") {
-              This.opts.error(result);
+            if (typeof self.opts.error == "function") {
+              self.opts.error(result);
             }
           }
         }
       },
       fail: function(result) {
-        if (typeof This.opts.error == "function") {
-          This.opts.error(result);
+        if (typeof self.opts.error == "function") {
+          self.opts.error(result);
         }
       }
     });
