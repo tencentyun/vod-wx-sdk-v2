@@ -61,9 +61,10 @@ Page({
     const self = this;
     VodUploader.start({
       mediaFile: self.data.videoFile, //必填，把chooseVideo回调的参数(file)传进来
-      mediaName: self.data.fileName, //选填，视频名称，强烈推荐填写(如果不填，则默认为“来自微信小程序”)
-      coverFile: self.data.coverFile,
       getSignature: self.getSignature, //必填，获取签名的函数
+
+      mediaName: self.data.fileName, //选填，视频名称，强烈推荐填写(如果不填，则默认为“来自微信小程序”)
+      coverFile: self.data.coverFile, // 选填，视频封面
       success: function (result) {
         console.log('success');
         console.log(result);
