@@ -25,6 +25,6 @@
 .file_upload {
     margin-top: 20px;
     margin-left: 20px;
-    width: 140px;
+    width: 200px;
     border: 1px solid gray;
 }

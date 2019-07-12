@@ -1,5 +1,6 @@
 const COS = require("./cos-wx-sdk-v5.1");
 const vodUtil = require("./vod_util");
+const { UploaderEvent } = require("./constants");
 
 class Uploader {
   constructor(opts) {
@@ -9,14 +10,22 @@ class Uploader {
     self.retryCommitNum = 3;
     self.retryApplyNum = 3;
 
+    let videoFile;
     if (opts.mediaFile) {
       // alias
-      self.opts.videoFile = opts.mediaFile;
+      videoFile = opts.mediaFile;
+    } else {
+      ({ videoFile } = opts);
     }
     if (opts.mediaName) {
       // alias
-      self.opts.fileName = opts.mediaName;
+      self.fileName = opts.mediaName;
+    } else {
+      self.fileName = opts.fileName;
     }
+
+    const { coverFile } = opts;
+
     if (vodUtil.getType(opts) !== "object") {
       wx.showToast({
         title: "参数必须为对象类型",
@@ -25,16 +34,20 @@ class Uploader {
       });
       return;
     }
-    if (!opts.videoFile) {
+    if (!videoFile) {
       wx.showToast({
-        title: "需要videoFile字段",
+        title: "需要mediaFile字段",
         icon: "error",
         duration: 3000
       });
       return;
     }
 
-    self.fileMessage = vodUtil.getFileMessage(opts.videoFile, opts.fileName);
+    self.videoFileMessage = vodUtil.getFileMessage(videoFile, self.fileName);
+    if (coverFile) {
+      coverFile.tempFilePath = coverFile.tempFilePaths[0];
+      self.coverFileMessage = vodUtil.getFileMessage(coverFile, self.fileName);
+    }
     if (!opts.getSignature) {
       wx.showToast({
         title: "需要getSignature字段",
@@ -73,16 +86,22 @@ class Uploader {
     const self = this;
     self.opts.getSignature(signature => {
       self.signature = signature;
-      const sendParam = {
+      const sendParams = {
         signature: signature,
-        videoName: self.fileMessage.name,
-        videoType: self.fileMessage.type,
-        videoSize: self.fileMessage.size
+        videoName: self.videoFileMessage.name,
+        videoType: self.videoFileMessage.type,
+        videoSize: self.videoFileMessage.size
       };
+      if (self.coverFileMessage) {
+        // upload video together with cover
+        sendParams.coverName = self.coverFileMessage.name;
+        sendParams.coverType = self.coverFileMessage.type;
+        sendParams.coverSize = self.coverFileMessage.size;
+      }
       wx.request({
         method: "POST",
         url: "https://vod2.qcloud.com/v3/index.php?Action=ApplyUploadUGC",
-        data: sendParam,
+        data: sendParams,
         dataType: "json",
         success: result => {
           if (result.data.code === 0) {
@@ -113,54 +132,87 @@ class Uploader {
   uploadFile(result, cb) {
     const self = this;
 
-    const res = result.data.data;
-    const cosParam = {
-      bucket: `${res.storageBucket}-${res.storageAppId}`,
-      region: res.storageRegionV5,
-      key: res.video.storagePath,
-      filePath: this.fileMessage.tempFilePath,
-      secretId: res.tempCertificate.secretId,
-      secretKey: res.tempCertificate.secretKey,
-      token: res.tempCertificate.token,
-      expiredTime: res.tempCertificate.expiredTime
-    };
+    const applyData = result.data.data;
+
     const cos = new COS({
       getAuthorization: (options, callback) => {
         callback({
-          TmpSecretId: cosParam.secretId,
-          TmpSecretKey: cosParam.secretKey,
-          XCosSecurityToken: cosParam.token,
-          ExpiredTime: cosParam.expiredTime
+          TmpSecretId: applyData.tempCertificate.secretId,
+          TmpSecretKey: applyData.tempCertificate.secretKey,
+          XCosSecurityToken: applyData.tempCertificate.token,
+          ExpiredTime: applyData.tempCertificate.expiredTime
         });
       }
     });
-    cos.postObject(
-      {
-        Bucket: cosParam.bucket,
-        Region: cosParam.region,
-        Key: cosParam.key,
-        FilePath: cosParam.filePath,
-        onProgress: info => {
-          if (vodUtil.isFunction(self.opts.progress)) {
-            self.opts.progress(info);
-          }
+
+    const cosCommonParam = {
+      bucket: `${applyData.storageBucket}-${applyData.storageAppId}`,
+      region: applyData.storageRegionV5
+    };
+
+    const uploadCosParams = [];
+
+    if (this.videoFileMessage) {
+      const cosVideoParam = {
+        ...cosCommonParam,
+        filePath: this.videoFileMessage.tempFilePath,
+        key: applyData.video.storagePath,
+        onProgress: function onProgress(data) {
+          self.emit(UploaderEvent.video_progress, data);
+          self.emit(UploaderEvent.media_progress, data);
         }
-      },
-      (err, data) => {
-        if (err) {
-          // 失败
-          if (vodUtil.isFunction(self.opts.error)) {
-            self.opts.error(err);
+      };
+      uploadCosParams.push(cosVideoParam);
+    }
+
+    if (this.coverFileMessage) {
+      const cosCoverParam = {
+        ...cosCommonParam,
+        filePath: this.coverFileMessage.tempFilePath,
+        key: applyData.cover.storagePath
+        // onProgress: function onProgress(data) {
+        //   self.emit(UploaderEvent.cover_progress, data);
+        // }
+      };
+      uploadCosParams.push(cosCoverParam);
+    }
+
+    const uploadPromises = uploadCosParams.map(uploadCosParam => {
+      return new Promise(function(resolve, reject) {
+        cos.postObject(
+          {
+            Bucket: uploadCosParam.bucket,
+            Region: uploadCosParam.region,
+            Key: uploadCosParam.key,
+            FilePath: uploadCosParam.filePath,
+            onProgress: info => {
+              if (vodUtil.isFunction(self.opts.progress)) {
+                self.opts.progress(info);
+              }
+            }
+          },
+          (err, data) => {
+            if (err) {
+              // 失败
+              if (vodUtil.isFunction(self.opts.error)) {
+                self.opts.error(err);
+              }
+              reject();
+              return;
+            }
+            // 成功
+            if (vodUtil.isFunction(self.opts.success)) {
+              self.opts.success(data);
+            }
+            resolve();
           }
-        } else {
-          // 成功
-          if (vodUtil.isFunction(self.opts.success)) {
-            self.opts.success(data);
-          }
-          cb();
-        }
-      }
-    );
+        );
+      });
+    });
+
+    Promise.all(uploadPromises).then(function() {
+      cb();
+    });
   }
 
   commitUpload() {
@@ -182,8 +234,9 @@ class Uploader {
           if (vodUtil.isFunction(self.opts.finish)) {
             self.opts.finish({
               fileId: res.fileId,
-              videoName: self.fileMessage.name,
-              videoUrl: res.video && res.video.url
+              videoName: self.videoFileMessage.name,
+              videoUrl: res.video && res.video.url,
+              coverUrl: res.cover && res.cover.url
             });
           }
         } else {
