@@ -95,7 +95,10 @@ const { UploaderEvent } = __webpack_require__(3);
 class Uploader {
   constructor(opts) {
     const self = this;
-    self.opts = opts;
+
+    if (vodUtil.getType(opts) !== "object") {
+      throw new Error("opts must be a object");
+    }
 
     self.retryCommitNum = 3;
     self.retryApplyNum = 3;
@@ -107,6 +110,11 @@ class Uploader {
     } else {
       ({ videoFile } = opts);
     }
+
+    if (!videoFile) {
+      throw new Error("need `mediaFile` param");
+    }
+
     if (opts.mediaName) {
       // alias
       self.fileName = opts.mediaName;
@@ -116,49 +124,29 @@ class Uploader {
 
     const { coverFile } = opts;
 
-    if (vodUtil.getType(opts) !== "object") {
-      wx.showToast({
-        title: "参数必须为对象类型",
-        icon: "error",
-        duration: 3000
-      });
-      return;
-    }
-    if (!videoFile) {
-      wx.showToast({
-        title: "需要mediaFile字段",
-        icon: "error",
-        duration: 3000
-      });
-      return;
-    }
-
     self.videoFileMessage = vodUtil.getFileMessage(videoFile, self.fileName);
     if (coverFile) {
       coverFile.tempFilePath = coverFile.tempFilePaths[0];
       self.coverFileMessage = vodUtil.getFileMessage(coverFile, self.fileName);
     }
-    if (!opts.getSignature) {
-      wx.showToast({
-        title: "需要getSignature字段",
-        icon: "error",
-        duration: 3000
-      });
-      return;
+    self.getSignature = opts.getSignature;
+    self.success = opts.success;
+    self.error = opts.error;
+    self.progress = opts.progress;
+    self.finish = opts.finish;
+    if (!self.getSignature) {
+      throw new Error("need `getSignature` param");
     }
     if (
-      !vodUtil.isFunction(opts.getSignature) ||
-      !vodUtil.isFunction(opts.success) ||
-      !vodUtil.isFunction(opts.error) ||
-      !vodUtil.isFunction(opts.progress) ||
-      !vodUtil.isFunction(opts.finish)
+      !vodUtil.isFunction(self.getSignature) ||
+      !vodUtil.isFunction(self.success) ||
+      !vodUtil.isFunction(self.error) ||
+      !vodUtil.isFunction(self.progress) ||
+      !vodUtil.isFunction(self.finish)
     ) {
-      wx.showToast({
-        title:
-          "getSignature必须为函数，如果有success、error、progress、finish，也必须为函数",
-        icon: "error",
-        duration: 3000
-      });
+      throw new Error(
+        "getSignature, success, error, progress, finish must be a Function."
+      );
     }
   }
 
@@ -174,7 +162,7 @@ class Uploader {
 
   applyUpload(callback) {
     const self = this;
-    self.opts.getSignature(signature => {
+    self.getSignature(signature => {
       self.signature = signature;
       const sendParams = {
         signature: signature,
@@ -204,15 +192,15 @@ class Uploader {
               self.applyUpload(callback);
             } else {
               // eslint-disable-next-line no-lonely-if
-              if (vodUtil.isFunction(self.opts.error)) {
-                self.opts.error(result);
+              if (vodUtil.isFunction(self.error)) {
+                self.error(result);
               }
             }
           }
         },
         fail: result => {
-          if (vodUtil.isFunction(self.opts.error)) {
-            self.opts.error(result);
+          if (vodUtil.isFunction(self.error)) {
+            self.error(result);
           }
         }
       });
@@ -260,6 +248,7 @@ class Uploader {
         ...cosCommonParam,
         filePath: this.coverFileMessage.tempFilePath,
         key: applyData.cover.storagePath
+        // cover don't need progress
         // onProgress: function onProgress(data) {
         //   self.emit(UploaderEvent.cover_progress, data);
         // }
@@ -276,23 +265,23 @@ class Uploader {
             Key: uploadCosParam.key,
             FilePath: uploadCosParam.filePath,
             onProgress: info => {
-              if (vodUtil.isFunction(self.opts.progress)) {
-                self.opts.progress(info);
+              if (vodUtil.isFunction(self.progress)) {
+                self.progress(info);
               }
             }
           },
           (err, data) => {
             if (err) {
-              // 失败
-              if (vodUtil.isFunction(self.opts.error)) {
-                self.opts.error(err);
+              // when fails
+              if (vodUtil.isFunction(self.error)) {
+                self.error(err);
               }
               reject();
               return;
             }
-            // 成功
-            if (vodUtil.isFunction(self.opts.success)) {
-              self.opts.success(data);
+            // when succeeds
+            if (vodUtil.isFunction(self.success)) {
+              self.success(data);
             }
             resolve();
           }
@@ -321,8 +310,8 @@ class Uploader {
       success: result => {
         if (result.data.code === 0) {
           const res = result.data.data;
-          if (vodUtil.isFunction(self.opts.finish)) {
-            self.opts.finish({
+          if (vodUtil.isFunction(self.finish)) {
+            self.finish({
               fileId: res.fileId,
               videoName: self.videoFileMessage.name,
               videoUrl: res.video && res.video.url,
@@ -336,15 +325,15 @@ class Uploader {
             self.commitUpload();
           } else {
             // eslint-disable-next-line no-lonely-if
-            if (vodUtil.isFunction(self.opts.error)) {
-              self.opts.error(result);
+            if (vodUtil.isFunction(self.error)) {
+              self.error(result);
             }
           }
         }
       },
       fail: result => {
-        if (vodUtil.isFunction(self.opts.error)) {
-          self.opts.error(result);
+        if (vodUtil.isFunction(self.error)) {
+          self.error(result);
         }
       }
     });
