@@ -1,12 +1,23 @@
-const VodUploader = require('../../lib/vod-wx-sdk-v2.js');
+const VodUploader = require("../../lib/vod-wx-sdk-v2.js");
 
-const app = getApp()
+const app = getApp();
 
 Page({
   data: {
-    fileName: '',
+    fileName: "",
     videoFile: null,
     coverFile: null,
+    progress: 0,
+    uploader: null,
+  },
+  reset() {
+    this.setData({
+      fileName: "",
+      videoFile: null,
+      coverFile: null,
+      progress: 0,
+      uploader: null,
+    })
   },
   getSignature: function (callback) {
     wx.request({
@@ -25,76 +36,94 @@ Page({
       }
     });
   },
-  inputChange: function (evt) {
+  inputChange: function(evt) {
     this.setData({
       fileName: evt.detail.value
-    })
+    });
   },
-  chooseVideo: function () {
+  chooseVideo: function() {
     const self = this;
     wx.chooseVideo({
-      sourceType: ['album', 'camera'],
+      sourceType: ["album", "camera"],
       compressed: true,
       maxDuration: 60,
-      success: function (file) {
+      success: function(file) {
+        console.log(file);
         self.setData({
           videoFile: file
-        })
-        console.log(`add videoFile`, file)
+        });
+        console.log(`add videoFile`, file);
       }
-    })
+    });
   },
   chooseCover() {
     const self = this;
     wx.chooseImage({
-      sourceType: ['album', 'camera'],
+      sourceType: ["album", "camera"],
       count: 1,
-      success: function (file) {
+      success: function(file) {
+        console.log(file);
         self.setData({
           coverFile: file
-        })
-        console.log(`add coverFile`, file)
+        });
+        console.log(`add coverFile`, file);
       }
-    })
+    });
   },
   startUpload() {
+    wx.showLoading({
+      title: '处理中',
+      mask: true,
+    })
     const self = this;
-    VodUploader.start({
+    const uploader = VodUploader.start({
       mediaFile: self.data.videoFile, //必填，把chooseVideo回调的参数(file)传进来
       getSignature: self.getSignature, //必填，获取签名的函数
 
-      mediaName: self.data.fileName, //选填，视频名称，强烈推荐填写(如果不填，则默认为“来自微信小程序”)
+      mediaName: self.data.fileName, //选填，视频名称，强烈推荐填写(如果不填，则默认为“来自小程序”)
       coverFile: self.data.coverFile, // 选填，视频封面
-      success: function (result) {
-        console.log('success');
+      error: function(result) {
+        console.log("error");
         console.log(result);
-      },
-      error: function (result) {
-        console.log('error');
-        console.log(result);
+        wx.hideLoading();
         wx.showModal({
-          title: '上传失败',
+          title: "上传失败",
           content: JSON.stringify(result),
           showCancel: false
         });
       },
-      progress: function (result) {
-        console.log('progress');
+      progress: function(result) {
+        console.log("progress");
         console.log(result);
-        wx.showLoading({
-          title: '上传中 ' + result.percent * 100 + '%',
-        });
+        wx.hideLoading();
+        self.setData({
+          progress: parseInt(result.percent * 100)
+        }) 
+        // wx.showLoading({
+        //   title: "上传中 " + result.percent * 100 + "%"
+        // });
       },
-      finish: function (result) {
-        console.log('finish');
+      finish: function(result) {
+        console.log("finish");
         console.log(result);
-        wx.hideLoading()
+        wx.hideLoading();
         wx.showModal({
-          title: '上传成功',
-          content: 'fileId:' + result.fileId + '\nvideoName:' + result.videoName,
+          title: "上传成功",
+          content:
+            "fileId:" + result.fileId + "\nvideoName:" + result.videoName,
           showCancel: false
         });
+        self.reset();
       }
     });
+    this.setData({
+      uploader: uploader,
+    })
+  },
+  cancelUpload() {
+    this.data.uploader.cancel();
+  },
+  resumeUpload() {
+    this.data.uploader.start();
   }
-})
+});

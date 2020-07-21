@@ -30,7 +30,8 @@ const vodUtil = {
     }
     fileMsg.size = file.size;
     return fileMsg;
-  }
+  },
+  noop: () => {}
 };
 
 module.exports = vodUtil;

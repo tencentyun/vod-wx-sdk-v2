@@ -1,8 +1,9 @@
 {
   "name": "vod-wx-sdk-v2",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tencent cloud vod sdk for wechat mini program",
-  "main": "index.js",
+  "main": "dist/vod-wx-sdk-v2.js",
+  "miniprogram": "dist",
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "dev": "webpack --config webpack.config.js --watch"
@@ -18,12 +19,17 @@
     "wechat"
   ],
   "author": "alsotang <alsotang@gmail.com>",
+  "contributors": ["_windmill <l20122005@live.com>"],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/tencentyun/vod-wx-sdk-v2/issues"
   },
   "homepage": "https://github.com/tencentyun/vod-wx-sdk-v2#readme",
   "devDependencies": {
+    "@babel/core": "^7.10.2",
+    "@babel/plugin-proposal-class-properties": "^7.10.1",
+    "@babel/preset-env": "^7.10.2",
+    "babel-loader": "^8.1.0",
     "eslint": "^5.3.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-config-prettier": "^5.0.0",

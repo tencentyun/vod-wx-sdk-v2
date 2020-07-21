@@ -28,3 +28,7 @@
     width: 200px;
     border: 1px solid gray;
 }
+
+.progress-box {
+    margin: 0 10px;
+}

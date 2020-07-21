@@ -2,9 +2,14 @@
   <view class="upload">
     <text class="tips_title">温馨提示：</text>
     <text class="tips_content">因为小程序获取不到真实的文件名，所以需要在上传视频之前，输入视频名称！如果不输入，SDK会设置默认的视频名称为“来自小程序”。</text>
+    <view class="progress-box">
+      <progress percent="{{progress}}" show-info />
+    </view>
     <input class="file_name" placeholder="在上传视频之前，输入视频名称" auto-focus type="text" bindinput="inputChange"/>
     <button class="file_upload" bindtap="chooseVideo">{{videoFile ? '已添加视频' : '添加视频（必选）'}}</button>
     <button class="file_upload" bindtap="chooseCover">{{coverFile ? '已添加封面' : '添加封面（可选）'}}</button>
     <button class="file_upload" bindtap="startUpload">开始上传</button>
+    <button class="file_upload" bindtap="cancelUpload"> 暂停/取消上传</button>
+    <button class="file_upload" bindtap="resumeUpload"> 恢复上传</button>
   </view>
 </view>
