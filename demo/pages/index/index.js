@@ -45,7 +45,7 @@ Page({
     const self = this;
     wx.chooseVideo({
       sourceType: ["album", "camera"],
-      compressed: true,
+      compressed: false,
       maxDuration: 60,
       success: function(file) {
         console.log(file);
