@@ -1,9 +1,9 @@
-const COS = require("./cos-wx-sdk-v5");
+const COS = require("cos-wx-sdk-v5");
 const vodUtil = require("./vod_util");
 const { UploaderEvent } = require("./constants");
 const { EventEmitter } = require("events");
 const COS_REGION_KEY = "COS_REGION_KEY";
-const {VodReporter, reportEvent} = require('./reporter');
+const { VodReporter, reportEvent } = require("./reporter");
 
 function raceRequest(options) {
   return new Promise((resolve, reject) => {
@@ -23,7 +23,6 @@ function raceRequest(options) {
 }
 
 class Uploader extends EventEmitter {
-  
   retryCommitNum = 3;
   retryApplyNum = 3;
   retryPrepareNum = 3;
@@ -63,9 +62,12 @@ class Uploader extends EventEmitter {
       coverFile.tempFilePath = coverFile.tempFilePaths[0];
       coverFile.size = coverFile.tempFiles[0].size;
       self.coverFileMessage = vodUtil.getFileMessage(coverFile, self.fileName);
-      self.fileKey = coverFile.tempFilePath.replace(/^.*?([^/]{32}\.\w+)$/, "$1");
+      self.fileKey = coverFile.tempFilePath.replace(
+        /^.*?([^/]{32}\.\w+)$/,
+        "$1"
+      );
     }
-    self.reportId = opts.reportId || '';
+    self.reportId = opts.reportId || "";
     self.getSignature = opts.getSignature;
     // self.success = opts.success;
     self.error = opts.error;
@@ -138,10 +140,10 @@ class Uploader extends EventEmitter {
             self.regionRace(result.data.data.cosRegionList, function(res) {
               self.emit(reportEvent.report_prepare, {
                 data: {
-                  region: res
+                  region: res,
                 },
                 requestStartTime: requestStartTime,
-              })
+              });
               callback(res);
             });
           } else {
@@ -150,7 +152,7 @@ class Uploader extends EventEmitter {
               self.emit(reportEvent.report_prepare, {
                 err: result.data,
                 requestStartTime: requestStartTime,
-              })
+              });
               self.retryPrepareNum -= 1;
               self.requestRegion(callback);
             } else {
@@ -186,9 +188,9 @@ class Uploader extends EventEmitter {
   start() {
     const self = this;
     // self.getStoreRegion((region) => {
-      
+
     // });
-    self.applyUpload(result => {
+    self.applyUpload((result) => {
       self.uploadFile(result, () => {
         self.commitUpload();
       });
@@ -196,6 +198,12 @@ class Uploader extends EventEmitter {
   }
   cancel() {
     this.cos.cancelTask(this.taskId);
+  }
+  pause() {
+    this.cos.pauseTask(this.taskId);
+  }
+  restart() {
+    this.cos.restartTask(this.taskId);
   }
 
   applyUpload(callback) {
@@ -234,7 +242,7 @@ class Uploader extends EventEmitter {
             self.appId = self.appId || result.data.data.appId;
             self.emit(reportEvent.report_apply, {
               data: sendParams,
-              requestStartTime: requestStartTime
+              requestStartTime: requestStartTime,
             });
             self.vodSessionKey = result.data.data.vodSessionKey;
             self.setStorage(self.fileKey, self.vodSessionKey);
@@ -244,7 +252,7 @@ class Uploader extends EventEmitter {
             if (self.retryApplyNum > 0) {
               self.emit(reportEvent.report_apply, {
                 err: result.data,
-                requestStartTime: requestStartTime
+                requestStartTime: requestStartTime,
               });
               self.retryApplyNum -= 1;
               self.applyUpload(callback);
@@ -280,6 +288,12 @@ class Uploader extends EventEmitter {
           ExpiredTime: applyData.tempCertificate.expiredTime,
         });
       },
+    });
+    cos.on("before-send", function(opt) {
+      var url = opt.url;
+      var u = url.match(/^(https?:\/\/([^\/]+)\/)([^\/]*\/?)(.*)$/);
+      opt.url = url.replace(u[2], "vod2.qcloud.com");
+      opt.headers["Vod-Forward-Cos"] = u[2];
     });
     this.cos = cos;
     const cosCommonParam = {
@@ -331,7 +345,7 @@ class Uploader extends EventEmitter {
       return new Promise(function(resolve, reject) {
         const requestStartTime = Date.now();
         cos.sliceUploadFile(
-        // cos.postObject(
+          // cos.postObject(
           {
             Bucket: uploadCosParam.bucket,
             Region: uploadCosParam.region,
@@ -339,27 +353,32 @@ class Uploader extends EventEmitter {
             FilePath: uploadCosParam.filePath,
             FileSize: uploadCosParam.fileSize,
             onProgress: uploadCosParam.onProgress,
-            onTaskReady: uploadCosParam.onTaskReady
+            onTaskReady: uploadCosParam.onTaskReady,
           },
           (err, data) => {
             if (err) {
               // when fails
-              if (uploadCosParam.filePath === self.videoFileMessage.tempFilePath) {
+              if (
+                uploadCosParam.filePath === self.videoFileMessage.tempFilePath
+              ) {
                 self.emit(reportEvent.report_cos_upload, {
                   err: err,
-                  requestStartTime: requestStartTime
+                  requestStartTime: requestStartTime,
                 });
               }
               if (vodUtil.isFunction(self.error)) {
                 const { error } = err;
-                const errObj = (error && error.Code) ? {
-                  code: error.Code,
-                  message: error.Message || error.message,
-                  reqid: error.RequestId || undefined
-                } : {
-                  code: err.statusCode || -2,
-                  message: 'cos error'
-                }
+                const errObj =
+                  error && error.Code
+                    ? {
+                        code: error.Code,
+                        message: error.Message || error.message,
+                        reqid: error.RequestId || undefined,
+                      }
+                    : {
+                        code: err.statusCode || -2,
+                        message: "cos error",
+                      };
                 self.error(errObj);
               }
               reject();
@@ -397,7 +416,7 @@ class Uploader extends EventEmitter {
         if (result.data.code === 0) {
           self.emit(reportEvent.report_commit, {
             data: result.data.data,
-            requestStartTime: requestStartTime
+            requestStartTime: requestStartTime,
           });
           const res = result.data.data;
           if (vodUtil.isFunction(self.finish)) {
@@ -413,7 +432,7 @@ class Uploader extends EventEmitter {
           // eslint-disable-next-line no-lonely-if
           self.emit(reportEvent.report_commit, {
             err: result.data,
-            requestStartTime: requestStartTime
+            requestStartTime: requestStartTime,
           });
           if (self.retryCommitNum > 0) {
             self.retryCommitNum -= 1;
@@ -443,10 +462,10 @@ module.exports = {
       uploader.start();
       return uploader;
     } catch (e) {
-      if(vodUtil.isFunction(params.error)) {
+      if (vodUtil.isFunction(params.error)) {
         params.error({
           code: -1,
-          message: e.message
+          message: e.message,
         });
       } else {
         throw e;

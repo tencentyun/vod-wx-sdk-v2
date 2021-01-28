@@ -1,12 +1,12 @@
 {
   "name": "vod-wx-sdk-v2",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Tencent cloud vod sdk for wechat mini program",
   "main": "dist/vod-wx-sdk-v2.js",
   "miniprogram": "dist",
   "scripts": {
     "build": "webpack --config webpack.config.js",
-    "dev": "webpack --config webpack.config.js --watch"
+    "dev": "webpack --config webpack.dev.js --watch"
   },
   "repository": {
     "type": "git",
@@ -19,23 +19,28 @@
     "wechat"
   ],
   "author": "alsotang <alsotang@gmail.com>",
-  "contributors": ["_windmill <l20122005@live.com>"],
+  "contributors": [
+    "_windmill <l20122005@live.com>"
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/tencentyun/vod-wx-sdk-v2/issues"
   },
   "homepage": "https://github.com/tencentyun/vod-wx-sdk-v2#readme",
   "devDependencies": {
-    "@babel/core": "^7.10.2",
-    "@babel/plugin-proposal-class-properties": "^7.10.1",
-    "@babel/preset-env": "^7.10.2",
-    "babel-loader": "^8.1.0",
-    "eslint": "^5.3.0",
-    "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-config-prettier": "^5.0.0",
-    "eslint-plugin-import": "^2.17.3",
-    "eslint-plugin-prettier": "^3.1.0",
-    "webpack": "^4.34.0",
-    "webpack-cli": "^3.3.4"
+    "@babel/core": "^7.12.10",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/preset-env": "^7.12.11",
+    "babel-loader": "^8.2.2",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-config-prettier": "^5.1.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-prettier": "^3.3.1",
+    "webpack": "^4.46.0",
+    "webpack-cli": "^3.3.12"
+  },
+  "dependencies": {
+    "cos-wx-sdk-v5": "^1.0.5"
   }
 }

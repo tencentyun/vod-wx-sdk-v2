@@ -1,5 +1,5 @@
 const Uploader = require("./vod");
-const pkg = require('../package.json');
+const pkg = require("../package.json");
 
 const VodReportEvent = {
   report_prepare: "report_prepare",
@@ -26,7 +26,7 @@ exports.VodReporter = class {
   baseReportData = {
     version: pkg.version,
     platform: 4000,
-    device: (function() {
+    device: (function () {
       const { brand, model, version } = wx.getSystemInfoSync();
       return `${brand}-${model}-wx${version}`;
     })(),
@@ -69,13 +69,13 @@ exports.VodReporter = class {
         customReportData.errCode = 1;
         customReportData.vodErrCode = reportObj.err.code;
         customReportData.errMsg = reportObj.err.message;
-      } 
+      }
       if (reportObj.data) {
         customReportData.cosRegion = reportObj.data.region;
       }
       this.report(customReportData);
     } catch (e) {
-      console.log('onPrepare', e);
+      console.log("onPrepare", e);
     }
   }
 
@@ -191,15 +191,18 @@ exports.VodReporter = class {
   }
 
   send(reportData) {
-    console.log('上报: ', reportData);
-    // wx.request({
-    //   method: "POST",
-    //   url: this.reportUrl,
-    //   data: reportData,
-    //   dataType: "json",
-    //   fail: (err) => {
-    //     console.log(err);
-    //   },
-    // })
+    if (process.env.NODE_ENV === "development") {
+      return console.log("上报: ", reportData);
+    }
+    console.log("上报: ", reportData);
+    wx.request({
+      method: "POST",
+      url: this.reportUrl,
+      data: reportData,
+      dataType: "json",
+      fail: (err) => {
+        console.log(err);
+      },
+    });
   }
 };

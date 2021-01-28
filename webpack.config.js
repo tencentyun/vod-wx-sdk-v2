@@ -6,15 +6,17 @@ module.exports = {
   output: {
     filename: "vod-wx-sdk-v2.js",
     path: path.resolve(__dirname, "dist"),
-    libraryTarget: "commonjs"
+    libraryTarget: "commonjs",
   },
   module: {
-    rules: [{
-      test: /\.js$/,
-      loader: 'babel-loader'
-    }]
+    rules: [
+      {
+        test: /\.js$/,
+        loader: "babel-loader",
+      },
+    ],
   },
   optimization: {
-    minimize: false
-  }
+    minimize: false,
+  },
 };
