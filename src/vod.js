@@ -88,11 +88,11 @@ class Uploader extends EventEmitter {
       );
     }
     // 网络状态变化时重新竞速获取最优 storeRegion
-    wx.onNetworkStatusChange((res) => {
-      if (res.isConnected) {
-        this.requestRegion();
-      }
-    });
+    // wx.onNetworkStatusChange((res) => {
+    //   if (res.isConnected) {
+    //     this.requestRegion();
+    //   }
+    // });
   }
 
   setStorage(name, val) {
@@ -137,7 +137,7 @@ class Uploader extends EventEmitter {
         success: (result) => {
           if (result.data.code === 0) {
             self.appId = self.appId || result.data.data.appId;
-            self.regionRace(result.data.data.cosRegionList, function(res) {
+            self.regionRace(result.data.data.cosRegionList, function (res) {
               self.emit(reportEvent.report_prepare, {
                 data: {
                   region: res,
@@ -289,7 +289,7 @@ class Uploader extends EventEmitter {
         });
       },
     });
-    cos.on("before-send", function(opt) {
+    cos.on("before-send", function (opt) {
       var url = opt.url;
       var u = url.match(/^(https?:\/\/([^\/]+)\/)([^\/]*\/?)(.*)$/);
       opt.url = url.replace(u[2], "vod2.qcloud.com");
@@ -318,7 +318,7 @@ class Uploader extends EventEmitter {
         //   self.emit(UploaderEvent.video_progress, data);
         //   self.emit(UploaderEvent.media_progress, data);
         // },
-        onTaskReady: function(taskId) {
+        onTaskReady: function (taskId) {
           self.taskId = taskId;
         },
       };
@@ -342,7 +342,7 @@ class Uploader extends EventEmitter {
     }
 
     const uploadPromises = uploadCosParams.map((uploadCosParam) => {
-      return new Promise(function(resolve, reject) {
+      return new Promise(function (resolve, reject) {
         const requestStartTime = Date.now();
         cos.sliceUploadFile(
           // cos.postObject(
@@ -394,7 +394,7 @@ class Uploader extends EventEmitter {
       });
     });
 
-    Promise.all(uploadPromises).then(function() {
+    Promise.all(uploadPromises).then(function () {
       cb();
     });
   }

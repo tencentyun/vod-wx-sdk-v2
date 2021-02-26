@@ -223,13 +223,13 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
     !vodUtil.isFunction(self.error) || !vodUtil.isFunction(self.progress) || !vodUtil.isFunction(self.finish)) {
       throw new Error("getSignature, error, progress, finish must be a Function.");
     } // 网络状态变化时重新竞速获取最优 storeRegion
+    // wx.onNetworkStatusChange((res) => {
+    //   if (res.isConnected) {
+    //     this.requestRegion();
+    //   }
+    // });
 
 
-    wx.onNetworkStatusChange(function (res) {
-      if (res.isConnected) {
-        _this.requestRegion();
-      }
-    });
     return _this;
   }
 
@@ -8443,7 +8443,7 @@ exports.VodReporter = (_temp = /*#__PURE__*/function () {
 /* 6 */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"vod-wx-sdk-v2\",\"version\":\"1.0.2\",\"description\":\"Tencent cloud vod sdk for wechat mini program\",\"main\":\"dist/vod-wx-sdk-v2.js\",\"miniprogram\":\"dist\",\"scripts\":{\"build\":\"webpack --config webpack.config.js\",\"dev\":\"webpack --config webpack.dev.js --watch\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/vod-wx-sdk-v2.git\"},\"keywords\":[\"vod\",\"tencentcloud\",\"qcloud\",\"wechat\"],\"author\":\"alsotang <alsotang@gmail.com>\",\"contributors\":[\"_windmill <l20122005@live.com>\"],\"license\":\"MIT\",\"bugs\":{\"url\":\"https://github.com/tencentyun/vod-wx-sdk-v2/issues\"},\"homepage\":\"https://github.com/tencentyun/vod-wx-sdk-v2#readme\",\"devDependencies\":{\"@babel/core\":\"^7.12.10\",\"@babel/plugin-proposal-class-properties\":\"^7.12.1\",\"@babel/preset-env\":\"^7.12.11\",\"babel-loader\":\"^8.2.2\",\"eslint\":\"^5.16.0\",\"eslint-config-airbnb-base\":\"^13.2.0\",\"eslint-config-prettier\":\"^5.1.0\",\"eslint-plugin-import\":\"^2.22.1\",\"eslint-plugin-prettier\":\"^3.3.1\",\"webpack\":\"^4.46.0\",\"webpack-cli\":\"^3.3.12\"},\"dependencies\":{\"cos-wx-sdk-v5\":\"^1.0.5\"}}");
+module.exports = JSON.parse("{\"name\":\"vod-wx-sdk-v2\",\"version\":\"1.0.3\",\"description\":\"Tencent cloud vod sdk for wechat mini program\",\"main\":\"dist/vod-wx-sdk-v2.js\",\"miniprogram\":\"dist\",\"scripts\":{\"build\":\"webpack --config webpack.config.js\",\"dev\":\"webpack --config webpack.dev.js --watch\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/vod-wx-sdk-v2.git\"},\"keywords\":[\"vod\",\"tencentcloud\",\"qcloud\",\"wechat\"],\"author\":\"alsotang <alsotang@gmail.com>\",\"contributors\":[\"_windmill <l20122005@live.com>\"],\"license\":\"MIT\",\"bugs\":{\"url\":\"https://github.com/tencentyun/vod-wx-sdk-v2/issues\"},\"homepage\":\"https://github.com/tencentyun/vod-wx-sdk-v2#readme\",\"devDependencies\":{\"@babel/core\":\"^7.12.10\",\"@babel/plugin-proposal-class-properties\":\"^7.12.1\",\"@babel/preset-env\":\"^7.12.11\",\"babel-loader\":\"^8.2.2\",\"eslint\":\"^5.16.0\",\"eslint-config-airbnb-base\":\"^13.2.0\",\"eslint-config-prettier\":\"^5.1.0\",\"eslint-plugin-import\":\"^2.22.1\",\"eslint-plugin-prettier\":\"^3.3.1\",\"webpack\":\"^4.46.0\",\"webpack-cli\":\"^3.3.12\"},\"dependencies\":{\"cos-wx-sdk-v5\":\"^1.0.5\"}}");
 
 /***/ })
 /******/ ])));
