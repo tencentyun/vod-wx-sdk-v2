@@ -425,6 +425,7 @@ class Uploader extends EventEmitter {
               videoName: self.videoFileMessage.name,
               videoUrl: res.video && res.video.url,
               coverUrl: res.cover && res.cover.url,
+              verify_content: res.video && res.video.verify_content,
             });
           }
           self.delStorage(self.fileKey);

@@ -577,7 +577,8 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
                 fileId: res.fileId,
                 videoName: self.videoFileMessage.name,
                 videoUrl: res.video && res.video.url,
-                coverUrl: res.cover && res.cover.url
+                coverUrl: res.cover && res.cover.url,
+                verify_content: res.video && res.video.verify_content
               });
             }
 
