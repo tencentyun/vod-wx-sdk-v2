@@ -22,6 +22,26 @@ function raceRequest(options) {
   });
 }
 
+function getCosStrategy(params) {
+  const sourceData = {
+    FileParallelLimit: params.fileParallelLimit,
+    ChunkParallelLimit: params.chunkParallelLimit || 6,
+    ChunkRetryTimes: params.chunkRetryTimes,
+    ChunkSize: params.chunkSize || 1048576 * 8,
+    SliceSize: params.sliceSize,
+    CopyChunkParallelLimit: params.copyChunkParallelLimit,
+    CopyChunkSize: params.copyChunkSize,
+    CopySliceSize: params.copySliceSize,
+    ProgressInterval: params.progressInterval
+  };
+
+  const cosStrategy = Object.keys(sourceData)
+    .filter(key => sourceData[key] !== undefined)
+    .reduce((acc, key) => ({ ...acc, [key]: sourceData[key] }), {});
+
+  return cosStrategy;
+}
+
 class Uploader extends EventEmitter {
   retryCommitNum = 3;
   retryApplyNum = 3;
@@ -37,6 +57,9 @@ class Uploader extends EventEmitter {
     self.appId = opts.appId || undefined;
     self.taskId = undefined;
     self.cos = undefined;
+
+    self.cosStrategy = getCosStrategy(opts);
+
     let videoFile;
     if (opts.mediaFile) {
       // alias
@@ -277,8 +300,7 @@ class Uploader extends EventEmitter {
     const self = this;
 
     const applyData = result.data.data;
-
-    const cos = new COS({
+    const cos = new COS(Object.assign({
       getAuthorization: (options, callback) => {
         callback({
           TmpSecretId: applyData.tempCertificate.secretId,
@@ -288,7 +310,7 @@ class Uploader extends EventEmitter {
           ExpiredTime: applyData.tempCertificate.expiredTime,
         });
       },
-    });
+    }, self.cosStrategy));
     cos.on("before-send", function (opt) {
       var url = opt.url;
       var u = url.match(/^(https?:\/\/([^\/]+)\/)([^\/]*\/?)(.*)$/);
