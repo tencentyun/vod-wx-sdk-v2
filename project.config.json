@@ -1,5 +1,5 @@
 {
-  "description": "项目配置文件。",
+  "description": "项目配置文件",
   "packOptions": {
     "ignore": []
   },
@@ -10,7 +10,7 @@
     "postcss": true,
     "preloadBackgroundData": false,
     "minified": true,
-    "newFeature": true,
+    "newFeature": false,
     "coverView": true,
     "nodeModules": false,
     "autoAudits": false,
@@ -41,25 +41,40 @@
     "ignoreUploadUnusedFiles": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.13.0",
-  "appid": "wx116d0dd5e6a39ac7",
-  "projectname": "demo",
-  "isGameTourist": false,
+  "libVersion": "2.16.1",
+  "appid": "wx54ef8ec1cd71e648",
+  "projectname": "upload",
+  "debugOptions": {
+    "hidedInDevtools": []
+  },
+  "scripts": {},
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
   "condition": {
-    "search": {
-      "list": []
-    },
-    "conversation": {
+    "plugin": {
       "list": []
     },
     "game": {
-      "currentL": -1,
+      "list": []
+    },
+    "gamePlugin": {
       "list": []
     },
     "miniprogram": {
-      "list": []
+      "list": [
+        {
+          "name": "index/index",
+          "pathName": "index/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "demo/pages/index/index",
+          "pathName": "demo/pages/index/index",
+          "query": "",
+          "scene": null
+        }
+      ]
     }
   }
 }

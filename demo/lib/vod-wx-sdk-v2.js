@@ -90,10 +90,6 @@
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -114,6 +110,10 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var COS = __webpack_require__(1);
@@ -127,6 +127,7 @@ var _require2 = __webpack_require__(4),
     EventEmitter = _require2.EventEmitter;
 
 var COS_REGION_KEY = "COS_REGION_KEY";
+var HOST = "vod2.qcloud.com";
 
 var _require3 = __webpack_require__(5),
     VodReporter = _require3.VodReporter,
@@ -147,6 +148,26 @@ function raceRequest(options) {
       }
     });
   });
+}
+
+function getCosStrategy(params) {
+  var sourceData = {
+    FileParallelLimit: params.fileParallelLimit,
+    ChunkParallelLimit: params.chunkParallelLimit || 6,
+    ChunkRetryTimes: params.chunkRetryTimes,
+    ChunkSize: params.chunkSize || 1048576 * 8,
+    SliceSize: params.sliceSize,
+    CopyChunkParallelLimit: params.copyChunkParallelLimit,
+    CopyChunkSize: params.copyChunkSize,
+    CopySliceSize: params.copySliceSize,
+    ProgressInterval: params.progressInterval
+  };
+  var cosStrategy = Object.keys(sourceData).filter(function (key) {
+    return sourceData[key] !== undefined;
+  }).reduce(function (acc, key) {
+    return _objectSpread(_objectSpread({}, acc), {}, _defineProperty({}, key, sourceData[key]));
+  }, {});
+  return cosStrategy;
 }
 
 var Uploader = /*#__PURE__*/function (_EventEmitter) {
@@ -176,6 +197,7 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
     self.appId = opts.appId || undefined;
     self.taskId = undefined;
     self.cos = undefined;
+    self.cosStrategy = getCosStrategy(opts);
     var videoFile;
 
     if (opts.mediaFile) {
@@ -223,13 +245,13 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
     !vodUtil.isFunction(self.error) || !vodUtil.isFunction(self.progress) || !vodUtil.isFunction(self.finish)) {
       throw new Error("getSignature, error, progress, finish must be a Function.");
     } // 网络状态变化时重新竞速获取最优 storeRegion
+    // wx.onNetworkStatusChange((res) => {
+    //   if (res.isConnected) {
+    //     this.requestRegion();
+    //   }
+    // });
 
 
-    wx.onNetworkStatusChange(function (res) {
-      if (res.isConnected) {
-        _this.requestRegion();
-      }
-    });
     return _this;
   }
 
@@ -394,7 +416,7 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
         var requestStartTime = Date.now();
         wx.request({
           method: "POST",
-          url: "https://vod2.qcloud.com/v3/index.php?Action=ApplyUploadUGC",
+          url: "https://".concat(HOST, "/v3/index.php?Action=ApplyUploadUGC"),
           data: sendParams,
           dataType: "json",
           success: function success(result) {
@@ -405,6 +427,7 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
                 requestStartTime: requestStartTime
               });
               self.vodSessionKey = result.data.data.vodSessionKey;
+              self.MiniProgramAccelerateHost = result.data.data.MiniProgramAccelerateHost;
               self.setStorage(self.fileKey, self.vodSessionKey);
               callback(result);
             } else {
@@ -437,7 +460,7 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
     value: function uploadFile(result, cb) {
       var self = this;
       var applyData = result.data.data;
-      var cos = new COS({
+      var cos = new COS(Object.assign({
         getAuthorization: function getAuthorization(options, callback) {
           callback({
             TmpSecretId: applyData.tempCertificate.secretId,
@@ -447,11 +470,12 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
             ExpiredTime: applyData.tempCertificate.expiredTime
           });
         }
-      });
+      }, self.cosStrategy));
       cos.on("before-send", function (opt) {
         var url = opt.url;
+        console.log('url', url);
         var u = url.match(/^(https?:\/\/([^\/]+)\/)([^\/]*\/?)(.*)$/);
-        opt.url = url.replace(u[2], "vod2.qcloud.com");
+        opt.url = url.replace(u[2], self.MiniProgramAccelerateHost || "vod2.qcloud.com");
         opt.headers["Vod-Forward-Cos"] = u[2];
       });
       this.cos = cos;
@@ -561,7 +585,7 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
       var requestStartTime = Date.now();
       wx.request({
         method: "POST",
-        url: "https://vod2.qcloud.com/v3/index.php?Action=CommitUploadUGC",
+        url: "https://".concat(HOST, "/v3/index.php?Action=CommitUploadUGC"),
         data: sendParam,
         dataType: "json",
         success: function success(result) {
@@ -577,7 +601,8 @@ var Uploader = /*#__PURE__*/function (_EventEmitter) {
                 fileId: res.fileId,
                 videoName: self.videoFileMessage.name,
                 videoUrl: res.video && res.video.url,
-                coverUrl: res.cover && res.cover.url
+                coverUrl: res.cover && res.cover.url,
+                verify_content: res.video && res.video.verify_content
               });
             }
 
@@ -8421,7 +8446,9 @@ exports.VodReporter = (_temp = /*#__PURE__*/function () {
   }, {
     key: "send",
     value: function send(reportData) {
-      if (false) {}
+      if (true) {
+        return console.log("上报: ", reportData);
+      }
 
       console.log("上报: ", reportData);
       wx.request({
@@ -8443,7 +8470,7 @@ exports.VodReporter = (_temp = /*#__PURE__*/function () {
 /* 6 */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"vod-wx-sdk-v2\",\"version\":\"1.0.2\",\"description\":\"Tencent cloud vod sdk for wechat mini program\",\"main\":\"dist/vod-wx-sdk-v2.js\",\"miniprogram\":\"dist\",\"scripts\":{\"build\":\"webpack --config webpack.config.js\",\"dev\":\"webpack --config webpack.dev.js --watch\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/vod-wx-sdk-v2.git\"},\"keywords\":[\"vod\",\"tencentcloud\",\"qcloud\",\"wechat\"],\"author\":\"alsotang <alsotang@gmail.com>\",\"contributors\":[\"_windmill <l20122005@live.com>\"],\"license\":\"MIT\",\"bugs\":{\"url\":\"https://github.com/tencentyun/vod-wx-sdk-v2/issues\"},\"homepage\":\"https://github.com/tencentyun/vod-wx-sdk-v2#readme\",\"devDependencies\":{\"@babel/core\":\"^7.12.10\",\"@babel/plugin-proposal-class-properties\":\"^7.12.1\",\"@babel/preset-env\":\"^7.12.11\",\"babel-loader\":\"^8.2.2\",\"eslint\":\"^5.16.0\",\"eslint-config-airbnb-base\":\"^13.2.0\",\"eslint-config-prettier\":\"^5.1.0\",\"eslint-plugin-import\":\"^2.22.1\",\"eslint-plugin-prettier\":\"^3.3.1\",\"webpack\":\"^4.46.0\",\"webpack-cli\":\"^3.3.12\"},\"dependencies\":{\"cos-wx-sdk-v5\":\"^1.0.5\"}}");
+module.exports = JSON.parse("{\"name\":\"vod-wx-sdk-v2\",\"version\":\"1.1.0\",\"description\":\"Tencent cloud vod sdk for wechat mini program\",\"main\":\"dist/vod-wx-sdk-v2.js\",\"miniprogram\":\"dist\",\"scripts\":{\"build\":\"webpack --config webpack.config.js\",\"dev\":\"webpack --config webpack.dev.js --watch\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/vod-wx-sdk-v2.git\"},\"keywords\":[\"vod\",\"tencentcloud\",\"qcloud\",\"wechat\"],\"author\":\"alsotang <alsotang@gmail.com>\",\"contributors\":[\"_windmill <l20122005@live.com>\"],\"license\":\"MIT\",\"bugs\":{\"url\":\"https://github.com/tencentyun/vod-wx-sdk-v2/issues\"},\"homepage\":\"https://github.com/tencentyun/vod-wx-sdk-v2#readme\",\"devDependencies\":{\"@babel/core\":\"^7.12.10\",\"@babel/plugin-proposal-class-properties\":\"^7.12.1\",\"@babel/preset-env\":\"^7.12.11\",\"babel-loader\":\"^8.2.2\",\"eslint\":\"^5.16.0\",\"eslint-config-airbnb-base\":\"^13.2.0\",\"eslint-config-prettier\":\"^5.1.0\",\"eslint-plugin-import\":\"^2.22.1\",\"eslint-plugin-prettier\":\"^3.3.1\",\"webpack\":\"^4.46.0\",\"webpack-cli\":\"^3.3.12\"},\"dependencies\":{\"cos-wx-sdk-v5\":\"^1.0.5\"}}");
 
 /***/ })
 /******/ ])));

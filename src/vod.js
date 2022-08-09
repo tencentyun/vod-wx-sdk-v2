@@ -1,9 +1,18 @@
 const COS = require("cos-wx-sdk-v5");
 const vodUtil = require("./vod_util");
-const { UploaderEvent } = require("./constants");
-const { EventEmitter } = require("events");
+const {
+  UploaderEvent
+} = require("./constants");
+const {
+  EventEmitter
+} = require("events");
 const COS_REGION_KEY = "COS_REGION_KEY";
-const { VodReporter, reportEvent } = require("./reporter");
+const HOST = "vod2.qcloud.com";
+
+const {
+  VodReporter,
+  reportEvent
+} = require("./reporter");
 
 function raceRequest(options) {
   return new Promise((resolve, reject) => {
@@ -37,7 +46,10 @@ function getCosStrategy(params) {
 
   const cosStrategy = Object.keys(sourceData)
     .filter(key => sourceData[key] !== undefined)
-    .reduce((acc, key) => ({ ...acc, [key]: sourceData[key] }), {});
+    .reduce((acc, key) => ({
+      ...acc,
+      [key]: sourceData[key]
+    }), {});
 
   return cosStrategy;
 }
@@ -65,7 +77,9 @@ class Uploader extends EventEmitter {
       // alias
       videoFile = opts.mediaFile;
     } else {
-      ({ videoFile } = opts);
+      ({
+        videoFile
+      } = opts);
     }
 
     if (!videoFile) {
@@ -79,7 +93,9 @@ class Uploader extends EventEmitter {
       self.fileName = opts.fileName;
     }
 
-    const { coverFile } = opts;
+    const {
+      coverFile
+    } = opts;
     self.videoFileMessage = vodUtil.getFileMessage(videoFile, self.fileName);
     if (coverFile) {
       coverFile.tempFilePath = coverFile.tempFilePaths[0];
@@ -257,7 +273,7 @@ class Uploader extends EventEmitter {
       const requestStartTime = Date.now();
       wx.request({
         method: "POST",
-        url: "https://vod2.qcloud.com/v3/index.php?Action=ApplyUploadUGC",
+        url: `https://${HOST}/v3/index.php?Action=ApplyUploadUGC`,
         data: sendParams,
         dataType: "json",
         success: (result) => {
@@ -268,6 +284,7 @@ class Uploader extends EventEmitter {
               requestStartTime: requestStartTime,
             });
             self.vodSessionKey = result.data.data.vodSessionKey;
+            self.MiniProgramAccelerateHost = result.data.data.MiniProgramAccelerateHost;
             self.setStorage(self.fileKey, self.vodSessionKey);
             callback(result);
           } else {
@@ -313,8 +330,9 @@ class Uploader extends EventEmitter {
     }, self.cosStrategy));
     cos.on("before-send", function (opt) {
       var url = opt.url;
+      console.log('url', url);
       var u = url.match(/^(https?:\/\/([^\/]+)\/)([^\/]*\/?)(.*)$/);
-      opt.url = url.replace(u[2], "vod2.qcloud.com");
+      opt.url = url.replace(u[2], self.MiniProgramAccelerateHost || "vod2.qcloud.com");
       opt.headers["Vod-Forward-Cos"] = u[2];
     });
     this.cos = cos;
@@ -389,18 +407,18 @@ class Uploader extends EventEmitter {
                 });
               }
               if (vodUtil.isFunction(self.error)) {
-                const { error } = err;
+                const {
+                  error
+                } = err;
                 const errObj =
-                  error && error.Code
-                    ? {
-                        code: error.Code,
-                        message: error.Message || error.message,
-                        reqid: error.RequestId || undefined,
-                      }
-                    : {
-                        code: err.statusCode || -2,
-                        message: "cos error",
-                      };
+                  error && error.Code ? {
+                    code: error.Code,
+                    message: error.Message || error.message,
+                    reqid: error.RequestId || undefined,
+                  } : {
+                    code: err.statusCode || -2,
+                    message: "cos error",
+                  };
                 self.error(errObj);
               }
               reject();
@@ -431,7 +449,7 @@ class Uploader extends EventEmitter {
     const requestStartTime = Date.now();
     wx.request({
       method: "POST",
-      url: "https://vod2.qcloud.com/v3/index.php?Action=CommitUploadUGC",
+      url: `https://${HOST}/v3/index.php?Action=CommitUploadUGC`,
       data: sendParam,
       dataType: "json",
       success: (result) => {
