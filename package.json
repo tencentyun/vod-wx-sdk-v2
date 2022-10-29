@@ -41,6 +41,6 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
-    "cos-wx-sdk-v5": "^1.0.5"
+    "cos-wx-sdk-v5": "^1.4.6"
   }
 }
