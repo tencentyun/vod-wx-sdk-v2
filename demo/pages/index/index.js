@@ -21,6 +21,7 @@ Page({
   },
   // 1. Demo上传之前建议在本地设置中勾选不校验合法域名，https证书选项
   // 2. 如果遇到请求报某个域名不在合法域名列表， 可以参考https://developers.weixin.qq.com/miniprogram/dev/framework/ability/network.html 在小程序开发者平台配置域名请求白名单
+  // 3. callback是一个匿名的异步回调，用于向sdk返回一个签名字符串，所以此参数必须存在
   getSignature: function (callback) {
     wx.request({
       url: 'https://demo.vod2.myqcloud.com/ugc-upload/',
