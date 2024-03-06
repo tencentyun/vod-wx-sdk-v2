@@ -19,17 +19,19 @@ Page({
       uploader: null,
     })
   },
+  // 1. Demo上传之前建议在本地设置中勾选不校验合法域名，https证书选项
+  // 2. 如果遇到请求报某个域名不在合法域名列表， 可以参考https://developers.weixin.qq.com/miniprogram/dev/framework/ability/network.html 在小程序开发者平台配置域名请求白名单
   getSignature: function (callback) {
     wx.request({
-      url: 'https://xzb.qcloud.com/get_vod_sign',
+      url: 'https://demo.vod2.myqcloud.com/ugc-upload/',
       method: 'POST',
       data: {
-        Action: 'GetVodSignatureV2'
+        Action: 'GetUgcUploadSign'
       },
       dataType: 'json',
       success: function (res) {
-        if (res.data && res.data.data.signature) {
-          callback(res.data.data.signature);
+        if (res.data && res.data.data.sign) {
+          callback(res.data.data.sign);
         } else {
           return '获取签名失败';
         }
@@ -43,30 +45,32 @@ Page({
   },
   chooseVideo: function() {
     const self = this;
-    wx.chooseVideo({
+    wx.chooseMedia({
       sourceType: ["album", "camera"],
-      compressed: false,
+      sizeType: ["original"],
       maxDuration: 60,
-      success: function(file) {
-        console.log(file);
+      success: function(res) {
+        console.log(res.tempFiles);
         self.setData({
-          videoFile: file
+          videoFile: res.tempFiles[0]
         });
-        console.log(`add videoFile`, file);
+        console.log(`add videoFile`, res.tempFiles[0]);
       }
     });
   },
   chooseCover() {
     const self = this;
-    wx.chooseImage({
+    wx.chooseMedia({
       sourceType: ["album", "camera"],
+      sizeType: ["original"],
       count: 1,
-      success: function(file) {
-        console.log(file);
+      mediaType: ["image"],
+      success: function(res) {
+        console.log(res.tempFiles);
         self.setData({
-          coverFile: file
+          coverFile: res.tempFiles[0]
         });
-        console.log(`add coverFile`, file);
+        console.log(`add coverFile`, res.tempFiles[0]);
       }
     });
   },
