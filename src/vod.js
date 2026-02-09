@@ -268,6 +268,7 @@ class Uploader extends EventEmitter {
               requestStartTime: requestStartTime,
             });
             self.vodSessionKey = result.data.data.vodSessionKey;
+            self.MiniProgramAccelerateHost = result.data.data.MiniProgramAccelerateHost;
             self.setStorage(self.fileKey, self.vodSessionKey);
             callback(result);
           } else {
@@ -314,7 +315,7 @@ class Uploader extends EventEmitter {
     cos.on("before-send", function (opt) {
       var url = opt.url;
       var u = url.match(/^(https?:\/\/([^\/]+)\/)([^\/]*\/?)(.*)$/);
-      opt.url = url.replace(u[2], "vod2.qcloud.com");
+      opt.url = url.replace(u[2], self.MiniProgramAccelerateHost || "vod2.qcloud.com");
       opt.headers["Vod-Forward-Cos"] = u[2];
     });
     this.cos = cos;
